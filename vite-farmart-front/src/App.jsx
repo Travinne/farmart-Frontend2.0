@@ -1,188 +1,112 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import React, { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
 
-// Public Pages
-import Home from "./pages/public/Home";
-import About from "./pages/public/About";
-import Contact from "./pages/public/Contact";
-import Categories from "./pages/public/Categories";
-import ProductList from "./pages/public/ProductList";
-import ProductDetails from "./pages/public/ProductDetails";
-import EquipmentList from "./pages/public/EquipmentList";
-import EquipmentDetails from "./pages/public/EquipmentDetails";
-import FAQ from "./pages/public/FAQ";
-import Terms from "./pages/public/Terms";
-import Privacy from "./pages/public/Privacy";
+/* =======================
+   Lazy Imports
+======================= */
 
-// User Pages (Auth + Dashboard)
-import Register from "./pages/user/Register";
-import Login from "./pages/user/Login";
-import UserDashboard from "./pages/user/Dashboard";
-import Profile from "./pages/user/Profile";
-import Orders from "./pages/user/Orders";
-import Cart from "./pages/user/Cart";
-import Checkout from "./pages/user/Checkout";
+// Auth
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 
-// Farmer Pages
-import FarmerDashboard from "./pages/farmer/FarmerDashboard";
-import AddProduct from "./pages/farmer/AddProduct";
-import ManageProducts from "./pages/farmer/ManageProducts";
-import FarmerOrders from "./pages/farmer/Sales";
-import FarmerProfile from "./pages/farmer/FarmerProfile";
+// Customer
+const Home = lazy(() => import("./pages/customer/Home"));
+const Products = lazy(() => import("./pages/customer/Products"));
+const ProductDetail = lazy(() => import("./pages/customer/ProductDetail"));
+const Cart = lazy(() => import("./pages/customer/Cart"));
+const Profile = lazy(() => import("./pages/customer/Profile"));
+const About = lazy(() => import("./pages/customer/About"));
 
-// Admin Pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ManageUsers from "./pages/admin/ManageUsers";
-import ManageAdminProducts from "./pages/admin/ManageProducts";
-import ManageAdminOrders from "./pages/admin/ManageOrders";
-import Reports from "./pages/admin/Reports";
+// Admin
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminProducts = lazy(() => import("./pages/admin/Products"));
+const AdminOrders = lazy(() => import("./pages/admin/Orders"));
 
-export default function App() {
+// Farmer
+const FarmerDashboard = lazy(() => import("./pages/farmer/Dashboard"));
+const FarmerAnalytics = lazy(() => import("./pages/farmer/Analytics"));
+const FarmerInventory = lazy(() => import("./pages/farmer/Inventory"));
+const FarmerOrders = lazy(() => import("./pages/farmer/Orders"));
+
+// Orders
+const Checkout = lazy(() => import("./pages/orders/Checkout"));
+const OrderHistory = lazy(() => import("./pages/orders/orderHistory"));
+const OrderTracking = lazy(() => import("./pages/orders/orderTracking"));
+
+// Public
+const Categories = lazy(() => import("./pages/public/Categories"));
+const Contact = lazy(() => import("./pages/public/Contact"));
+const FAQ = lazy(() => import("./pages/public/FAQ"));
+const Privacy = lazy(() => import("./pages/public/Privacy"));
+const Terms = lazy(() => import("./pages/public/Terms"));
+
+// Shared
+const NotFound = lazy(() => import("./pages/shared/NotFound"));
+const ErrorPage = lazy(() => import("./pages/shared/Error"));
+const Maintenance = lazy(() => import("./pages/shared/Maintenance"));
+
+/* =======================
+   App Component
+======================= */
+
+function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/products" element={<ProductList />} />
-            <Route path="/products/:id" element={<ProductDetails />} />
-            <Route path="/equipment" element={<EquipmentList />} />
-            <Route path="/equipment/:id" element={<EquipmentDetails />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
 
-            {/* Auth Routes */}
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
+        {/* ---------- AUTH ---------- */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* User Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["user"]}>
-                  <UserDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute allowedRoles={["user", "farmer", "admin"]}>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute allowedRoles={["user"]}>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute allowedRoles={["user"]}>
-                  <Cart />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute allowedRoles={["user"]}>
-                  <Checkout />
-                </ProtectedRoute>
-              }
-            />
+        {/* ---------- CUSTOMER ---------- */}
+        <Route path="/" element={<Home />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/about" element={<About />} />
 
-            {/* Farmer Protected Routes */}
-            <Route
-              path="/farmer/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["farmer"]}>
-                  <FarmerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/farmer/add-product"
-              element={
-                <ProtectedRoute allowedRoles={["farmer"]}>
-                  <AddProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/farmer/products"
-              element={
-                <ProtectedRoute allowedRoles={["farmer"]}>
-                  <ManageProducts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/farmer/orders"
-              element={
-                <ProtectedRoute allowedRoles={["farmer"]}>
-                  <FarmerOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/farmer/:id" element={<FarmerProfile />} />
+        {/* ---------- ORDERS ---------- */}
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders/history" element={<OrderHistory />} />
+        <Route path="/orders/tracking" element={<OrderTracking />} />
 
-            {/* Admin Protected Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <ManageUsers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/products"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <ManageAdminProducts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/orders"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <ManageAdminOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/reports"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <Reports />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+        {/* ---------- ADMIN ---------- */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+
+        {/* ---------- FARMER ---------- */}
+        <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
+        <Route path="/farmer/analytics" element={<FarmerAnalytics />} />
+        <Route path="/farmer/inventory" element={<FarmerInventory />} />
+        <Route path="/farmer/orders" element={<FarmerOrders />} />
+
+        {/* ---------- PUBLIC ---------- */}
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+
+        {/* ---------- SHARED ---------- */}
+        <Route path="/error" element={<ErrorPage />} />
+        <Route path="/maintenance" element={<Maintenance />} />
+
+        {/* ---------- 404 ---------- */}
+        <Route path="*" element={<NotFound />} />
+
+      </Routes>
+    </Suspense>
   );
 }
+
+export default App;

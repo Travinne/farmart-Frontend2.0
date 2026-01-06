@@ -1,6 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function FAQ() {
+  const navigate = useNavigate();
+
   const faqs = [
     {
       question: "How do I create an account?",
@@ -29,15 +32,23 @@ function FAQ() {
   ];
 
   return (
-    <div className="faq-page">
-      <h1 className="faq-title">Frequently Asked Questions</h1>
-      <p className="faq-subtitle">Find answers to common questions about Farmart</p>
+    <div className="faq-page max-w-4xl mx-auto p-4">
+      {}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded shadow"
+      >
+        ← Back
+      </button>
 
-      <div className="faq-list">
+      <h1 className="faq-title text-3xl font-bold mb-2">Frequently Asked Questions</h1>
+      <p className="faq-subtitle text-gray-700 mb-6">Find answers to common questions about Farmart</p>
+
+      <div className="faq-list space-y-4">
         {faqs.map((item, index) => (
-          <div key={index} className="faq-item">
-            <h3 className="faq-question">{item.question}</h3>
-            <p className="faq-answer">{item.answer}</p>
+          <div key={index} className="faq-item p-4 border rounded shadow-sm">
+            <h3 className="faq-question font-semibold text-lg">{item.question}</h3>
+            <p className="faq-answer text-gray-700 mt-1">{item.answer}</p>
           </div>
         ))}
       </div>
