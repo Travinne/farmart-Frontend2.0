@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Home = () => {
@@ -6,6 +6,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
+  const notificationIdCounter = useRef(0); // ✅ FIX: Use a counter instead of Date.now()
 
   // Mock data for featured products
   const mockFeaturedProducts = [
@@ -57,16 +58,21 @@ const Home = () => {
 
   // Stats data
   const stats = [
-    { id: 1, title: 'Total Products', value: '1,234', change: '+12%', color: 'blue' },
-    { id: 2, title: 'Active Farmers', value: '89', change: '+8%', color: 'green' },
-    { id: 3, title: 'Orders Today', value: '156', change: '+23%', color: 'yellow' },
-    { id: 4, title: 'Happy Customers', value: '4,567', change: '+15%', color: 'purple' }
+    { id: 'stat-1', title: 'Total Products', value: '1,234', change: '+12%', color: 'blue' },
+    { id: 'stat-2', title: 'Active Farmers', value: '89', change: '+8%', color: 'green' },
+    { id: 'stat-3', title: 'Orders Today', value: '156', change: '+23%', color: 'yellow' },
+    { id: 'stat-4', title: 'Happy Customers', value: '4,567', change: '+15%', color: 'purple' }
   ];
+
+  // ✅ FIX: Use a unique ID generator instead of Date.now()
+  const generateUniqueId = () => {
+    return `notification-${++notificationIdCounter.current}-${Date.now()}`;
+  };
 
   // Add notification
   const addNotification = (notification) => {
     const newNotification = {
-      id: Date.now(),
+      id: generateUniqueId(), // ✅ FIXED: Use unique ID
       ...notification,
       timestamp: new Date().toISOString()
     };
@@ -181,7 +187,7 @@ const Home = () => {
   };
 
   // Alert Component
-  const Alert = ({ type = 'info', title, message, onDismiss, className = '' }) => {
+  const Alert = ({ id, type = 'info', title, message, onDismiss, className = '' }) => {
     const styles = {
       success: {
         bg: 'bg-green-50',
@@ -336,7 +342,8 @@ const Home = () => {
       <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
         {notifications.map(notification => (
           <Alert
-            key={notification.id}
+            key={notification.id} // ✅ FIXED: Now using unique ID
+            id={notification.id}
             type={notification.type}
             title={notification.title}
             message={notification.message}
@@ -393,7 +400,7 @@ const Home = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map(stat => (
             <StatsCard
-              key={stat.id}
+              key={stat.id} // ✅ Already has unique ID
               title={stat.title}
               value={stat.value}
               change={stat.change}
@@ -424,7 +431,7 @@ const Home = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.map(product => (
             <ProductCard
-              key={product.id}
+              key={`product-${product.id}`} // ✅ Unique key with prefix
               product={product}
               onAddToCart={handleAddToCart}
               onViewDetails={handleViewDetails}

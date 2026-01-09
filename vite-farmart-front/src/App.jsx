@@ -1,5 +1,89 @@
 import React, { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+/* =======================
+   Layout Components
+======================= */
+const MainLayout = lazy(() => import("./shared/components/Layout/MainLayout"));
+const DashboardLayout = lazy(() => import("./shared/components/Layout/DashboardLayout"));
+const AuthLayout = lazy(() => import("./shared/components/Layout/AuthLayout"));
+
+/* =======================
+   Loading Components
+======================= */
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex flex-col items-center">
+      <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
+      <div className="space-y-2 text-center">
+        <p className="text-xl font-semibold text-gray-700">Farmart</p>
+        <p className="text-gray-500">Loading your fresh experience...</p>
+      </div>
+    </div>
+  </div>
+);
+
+const PageLoading = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="w-10 h-10 border-2 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-3"></div>
+      <p className="text-sm text-gray-500">Loading...</p>
+    </div>
+  </div>
+);
+
+/* =======================
+   Protected Route Components
+======================= */
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const { user, isLoading } = useSelector((state) => state.auth);
+
+  if (isLoading) {
+    return <PageLoading />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    // Redirect based on user role
+    switch (user.role) {
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'farmer':
+        return <Navigate to="/farmer/dashboard" replace />;
+      case 'customer':
+        return <Navigate to="/profile" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
+  }
+
+  return children;
+};
+
+const PublicOnlyRoute = ({ children }) => {
+  const { user, isLoading } = useSelector((state) => state.auth);
+
+  if (isLoading) {
+    return <PageLoading />;
+  }
+
+  if (user) {
+    switch (user.role) {
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'farmer':
+        return <Navigate to="/farmer/dashboard" replace />;
+      default:
+        return <Navigate to="/profile" replace />;
+    }
+  }
+
+  return children;
+};
 
 /* =======================
    Lazy Imports
@@ -44,66 +128,177 @@ const FAQ = lazy(() => import("./pages/public/FAQ"));
 const Privacy = lazy(() => import("./pages/public/Privacy"));
 const Terms = lazy(() => import("./pages/public/Terms"));
 
-// Shared
+// Shared Error Pages
 const NotFound = lazy(() => import("./pages/shared/NotFound"));
 const ErrorPage = lazy(() => import("./pages/shared/Error"));
 const Maintenance = lazy(() => import("./pages/shared/Maintenance"));
 
 /* =======================
-   App Component
+   Main App Component
 ======================= */
 
 function App() {
+  // Get auth state
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <Routes>
+        {/* ---------- DEFAULT REDIRECT ---------- */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
 
-        {/* ---------- AUTH ---------- */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* ---------- AUTH ROUTES (Public Only) ---------- */}
+        <Route path="/auth/*" element={
+          <Suspense fallback={<PageLoading />}>
+            <AuthLayout />
+          </Suspense>
+        }>
+          <Route path="login" element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          } />
+          <Route path="register" element={
+            <PublicOnlyRoute>
+              <Register />
+            </PublicOnlyRoute>
+          } />
+          <Route path="forgot-password" element={
+            <PublicOnlyRoute>
+              <ForgotPassword />
+            </PublicOnlyRoute>
+          } />
+          <Route path="reset-password" element={
+            <PublicOnlyRoute>
+              <ResetPassword />
+            </PublicOnlyRoute>
+          } />
+        </Route>
 
-        {/* ---------- CUSTOMER ---------- */}
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/about" element={<About />} />
+        {/* ---------- PUBLIC ROUTES ---------- */}
+        <Route path="/*" element={
+          <Suspense fallback={<PageLoading />}>
+            <MainLayout />
+          </Suspense>
+        }>
+          <Route index element={<Home />} />
+          <Route path="products" element={<Products />} />
+          <Route path="products/:id" element={<ProductDetail />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="faq" element={<FAQ />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
+          
+          {/* Cart & Checkout */}
+          <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <Checkout />
+            </ProtectedRoute>
+          } />
+          
+          {/* Customer Profile Routes */}
+          <Route path="profile" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="orders/history" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <OrderHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="orders/tracking" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <OrderTracking />
+            </ProtectedRoute>
+          } />
+        </Route>
 
-        {/* ---------- ORDERS ---------- */}
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/orders/history" element={<OrderHistory />} />
-        <Route path="/orders/tracking" element={<OrderTracking />} />
+        {/* ---------- ADMIN PROTECTED ROUTES ---------- */}
+        <Route path="/admin/*" element={
+          <Suspense fallback={<PageLoading />}>
+            <DashboardLayout />
+          </Suspense>
+        }>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="analytics" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsers />
+            </ProtectedRoute>
+          } />
+          <Route path="products" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminProducts />
+            </ProtectedRoute>
+          } />
+          <Route path="orders" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminOrders />
+            </ProtectedRoute>
+          } />
+        </Route>
 
-        {/* ---------- ADMIN ---------- */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/products" element={<AdminProducts />} />
-        <Route path="/admin/orders" element={<AdminOrders />} />
+        {/* ---------- FARMER PROTECTED ROUTES ---------- */}
+        <Route path="/farmer/*" element={
+          <Suspense fallback={<PageLoading />}>
+            <DashboardLayout />
+          </Suspense>
+        }>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={
+            <ProtectedRoute allowedRoles={['farmer']}>
+              <FarmerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="analytics" element={
+            <ProtectedRoute allowedRoles={['farmer']}>
+              <FarmerAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="inventory" element={
+            <ProtectedRoute allowedRoles={['farmer']}>
+              <FarmerInventory />
+            </ProtectedRoute>
+          } />
+          <Route path="orders" element={
+            <ProtectedRoute allowedRoles={['farmer']}>
+              <FarmerOrders />
+            </ProtectedRoute>
+          } />
+        </Route>
 
-        {/* ---------- FARMER ---------- */}
-        <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
-        <Route path="/farmer/analytics" element={<FarmerAnalytics />} />
-        <Route path="/farmer/inventory" element={<FarmerInventory />} />
-        <Route path="/farmer/orders" element={<FarmerOrders />} />
+        {/* ---------- SHARED ERROR ROUTES ---------- */}
+        <Route path="/error" element={
+          <Suspense fallback={<PageLoading />}>
+            <ErrorPage />
+          </Suspense>
+        } />
+        <Route path="/maintenance" element={
+          <Suspense fallback={<PageLoading />}>
+            <Maintenance />
+          </Suspense>
+        } />
 
-        {/* ---------- PUBLIC ---------- */}
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-
-        {/* ---------- SHARED ---------- */}
-        <Route path="/error" element={<ErrorPage />} />
-        <Route path="/maintenance" element={<Maintenance />} />
-
-        {/* ---------- 404 ---------- */}
-        <Route path="*" element={<NotFound />} />
-
+        {/* ---------- 404 NOT FOUND ---------- */}
+        <Route path="*" element={
+          <Suspense fallback={<PageLoading />}>
+            <NotFound />
+          </Suspense>
+        } />
       </Routes>
     </Suspense>
   );
